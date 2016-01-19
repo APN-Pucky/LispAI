@@ -1,0 +1,6 @@
+(defun calc (matrix)
+	(let ((r (random 4)))
+		(cond 	((= r 3) (left))
+			((= r 2) (right))
+			((= r 1) (up))
+			((= r 0) (down)))))

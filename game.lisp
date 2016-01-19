@@ -1,4 +1,7 @@
 (setf *random-state* (make-random-state t))
+(load "randomAImanual.lisp")
+(defvar *debug* t)
+(defvar *fails* 10)
 (defvar *print-width* 10)
 (defvar *size* 4)
 (defvar *width* *size*)
@@ -8,6 +11,10 @@
 (defvar *score* 0)
 (defparameter *matrix* '((2 0 0 0) (2 0 2 0) (0 0 0 0) (0 0 2 0)))
 (defparameter *matrix-save* '((2 0 0 0) (2 0 2 0) (0 0 0 0) (0 0 2 0)))
+(defparameter *matrix-check* '((2 0 0 0) (2 0 2 0) (0 0 0 0) (0 0 2 0)))
+
+(defun logdbg (s)
+	(if *debug* (format t "~a~%" s)))
 
 (defun printmatrix (matrix) 
   	(format t "~{|~{ ~{~Vd~}~}|~%~}~%"
@@ -32,12 +39,17 @@
 (defun clone (clone)
 	(loop for y from 0 to (- *height* 1) do 
 		(setf (nth y  clone) (copy-list (nth y *matrix*))))) 
-(defun startgame ()
-	(initmatrix)
-	(fillrandom)
-	(fillrandom))
+
 (defun initmatrix ()
 	(setf *matrix* '((0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0))))
+
+(defun startgame ()
+	(initmatrix)
+	(clone *matrix-save*)
+	(clone *matrix-check*)
+	(fillrandom)
+	(fillrandom))
+
 (defun move-right ()
 	(loop for y from 0 to (- *height* 1) do
                 (loop for x from (- *width* 2) downto 0 do
@@ -114,35 +126,54 @@
                 (loop for x from 0 to (- *width* 2) do
 		(if (not (= (getm y x) 0)) (if (= (getm y x) (getm y (+ x 1))) (progn (setm y x (* (getm y x) 2)) (setm y (+ x 1) 0) (inc (getm y x))))))))
 
+(defun check ()
+	(clone *matrix-check*))
 
+(defun checkfill ()
+	(if (not (equal *matrix-check* *matrix*)) (progn (fillrandom) (clone *matrix-check*))))
+	
 (defun right ()
+	(logdbg "right")
+	(check)
 	(move-right)
 	(add-right)
-	(move-right))
+	(move-right)
+	(checkfill))
 
 (defun left ()
+	(logdbg "left")
+	(check)
 	(move-left)
 	(add-left)
-	(move-left))
+	(move-left)
+	(checkfill))
 
 (defun down ()
+	(logdbg "down")
+	(check)
 	(move-down)
 	(add-down)
-	(move-down))
+	(move-down)
+	(checkfill))
+
 (defun up ()
+	(logdbg "up")
+	(check)
 	(move-up)
 	(add-up)
-	(move-up))
+	(move-up)
+	(checkfill))
 	
 (startgame)
-(clone *matrix-save*)
-(left)
-(if (not (equal *matrix-save* *matrix*)) (progn (fillrandom) (clone *matrix-save*)))
-(down)
-(if (not (equal *matrix-save* *matrix*)) (progn (fillrandom) (clone *matrix-save*)))
-(up)
-(if (not (equal *matrix-save* *matrix*)) (progn (fillrandom) (clone *matrix-save*)))
-(right)
-(if (not (equal *matrix-save* *matrix*)) (progn (fillrandom) (clone *matrix-save*)))
+(let ((i 0))
+	(loop
+		(logdbg i)
+		;;;(printmatrix *matrix*)
+		;;;(printmatrix *matrix-save*)
+		(if (= i *fails*) (progn (setf i 0) (if (equal *matrix-save* *matrix*) (return) (clone *matrix-save*))))
+		;;;(left)
+		(calc *matrix*)
+		(setf i (+ i 1))
+))
 (printmatrix *matrix*)
 (print *score*)
