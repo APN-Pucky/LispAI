@@ -1,7 +1,8 @@
 (setf *random-state* (make-random-state t))
-(load "randomAImanual.lisp")
-(defvar *debug* t)
+	
+(defvar *debug* NIL)
 (defvar *fails* 10)
+(defvar *iterations* 1000.0)
 (defvar *print-width* 10)
 (defvar *size* 4)
 (defvar *width* *size*)
@@ -9,9 +10,11 @@
 (defvar *array*)
 (defvar *tmp*)
 (defvar *score* 0)
-(defparameter *matrix* '((2 0 0 0) (2 0 2 0) (0 0 0 0) (0 0 2 0)))
-(defparameter *matrix-save* '((2 0 0 0) (2 0 2 0) (0 0 0 0) (0 0 2 0)))
-(defparameter *matrix-check* '((2 0 0 0) (2 0 2 0) (0 0 0 0) (0 0 2 0)))
+(defvar *sum* 0.0)
+
+(defparameter *matrix* '((0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)))
+(defparameter *matrix-save* '((0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)))
+(defparameter *matrix-check* '((0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0)))
 
 (defun logdbg (s)
 	(if *debug* (format t "~a~%" s)))
@@ -36,15 +39,19 @@
 			(if (= (getm x y) 0)(progn (push y *array*) (push x *array*)))))
 	(setf *tmp* (* (random (/ (length *array*) 2)) 2))
 	(setm (nth *tmp* *array*) (nth (+ 1 *tmp*) *array*) (if (< (random 1.0) 0.9) 2 4)))
+
 (defun clone (clone)
 	(loop for y from 0 to (- *height* 1) do 
 		(setf (nth y  clone) (copy-list (nth y *matrix*))))) 
 
 (defun initmatrix ()
-	(setf *matrix* '((0 0 0 0) (0 0 0 0) (0 0 0 0) (0 0 0 0))))
+	(loop for y from 0 to (- *height* 1) do 
+		(loop for x from 0 to (- *width* 1) do 
+			(setm x y 0))))
 
 (defun startgame ()
 	(initmatrix)
+	(setf *score* 0)
 	(clone *matrix-save*)
 	(clone *matrix-check*)
 	(fillrandom)
@@ -130,7 +137,8 @@
 	(clone *matrix-check*))
 
 (defun checkfill ()
-	(if (not (equal *matrix-check* *matrix*)) (progn (fillrandom) (clone *matrix-check*))))
+	;;;(print(not (equal *matrix-check* *matrix*)) )
+	(if (not (equal *matrix-check* *matrix*)) (progn (fillrandom))))
 	
 (defun right ()
 	(logdbg "right")
@@ -163,17 +171,21 @@
 	(add-up)
 	(move-up)
 	(checkfill))
-	
-(startgame)
-(let ((i 0))
-	(loop
-		(logdbg i)
-		;;;(printmatrix *matrix*)
-		;;;(printmatrix *matrix-save*)
-		(if (= i *fails*) (progn (setf i 0) (if (equal *matrix-save* *matrix*) (return) (clone *matrix-save*))))
-		;;;(left)
-		(calc *matrix*)
-		(setf i (+ i 1))
-))
-(printmatrix *matrix*)
-(print *score*)
+
+(defun getValue (func)
+	(setf *sum* 0)
+		(loop for j from 1 to *iterations* do
+			(startgame)
+			(let ((i 0))
+        			(loop
+                			(logdbg i)
+                			(if (= i *fails*) (progn (setf i 0) (if (equal *matrix-save* *matrix*) (return) (clone *matrix-save*))))
+                		(funcall func *matrix*)
+                		(setf i (+ i 1))
+			))
+			;;;(format t "~a~%" *sum*)
+			(setf *sum* (+ *sum* *score*))
+			
+		)	
+	(/ *sum* *iterations*)
+)

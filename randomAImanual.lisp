@@ -1,5 +1,7 @@
+(load "game.lisp")
 (defun calc (matrix)
 	(let ((r (random 100)))
 		(cond 	((< r 30) (left))
 			((> r 70) (right))
 			(t (down)))))
+(print (getValue 'calc))
