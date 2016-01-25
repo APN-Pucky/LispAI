@@ -1,0 +1,73 @@
+(load "treeAI.lisp")
+
+(defparameter *treesize* 7)
+(defparameter *populationsize* 20)
+(defparameter *popiterations* 50)
+(defparameter *treelist* '())
+(defparameter *fitlist* '())
+(defparameter *fittest* 0)
+(defparameter *fit* 0)
+
+(defun filltreelist ()
+	(setf *treelist* '())
+	(setf *fitlist* '())
+	(dotimes (x *populationsize*)
+		(setf *treelist* (append *treelist* (list (make-tree *treesize*))))
+		(setf *fitlist* (append *fitlist* (list '0)))))
+
+(defun updatefittest ()
+	(dotimes (x *populationsize*)
+		(format t "~a.~%" x)
+		(format t "len: ~a~%" (count-nodes (nth x *treelist*)))
+		(setf (nth x *fitlist*) (fitness (nth x *treelist*)))))
+
+(defun getfittest ()
+	(setf *fit* 0);
+	(dotimes (x *populationsize*)
+		(when (> (nth x *fitlist*) *fit*) (setf *fit* (nth x *fitlist*)) (setf *fittest* x)))
+	(format t "fit: ~a~%" *fit*)
+	(return-from getfittest *fittest*))
+
+(defun evolve ()
+	(let ((topten '()))
+		(dotimes (x (/ *populationsize* 10))
+			(getfittest)
+			(setf topten (append topten (list (nth *fittest* *treelist*))))
+			(setf (nth *fittest* *fitlist*) 0)
+		)
+		(dotimes (x (/ *populationsize* 2))
+			(if (> (random 1.0) 0.1) 
+			(progn
+				(if (> (random 1.0) 0.3)
+				(multiple-value-bind (a b) (crossover (nth (random (length topten)) topten) (nth (random (length topten)) topten))
+					(setf (nth x *treelist*) a)
+					(setf (nth (+ x (/ *populationsize* 2)) *treelist*) b))
+				(multiple-value-bind (a b) (mutation (nth (random (length topten)) topten))
+                                        (setf (nth x *treelist*) a)
+                                        (setf (nth (+ x (/ *populationsize* 2)) *treelist*) b))))
+			(progn
+				(if (> (random 1.0) 0.3)
+                                (multiple-value-bind (a b) (crossover (nth (random (length *treelist*)) *treelist*) (nth (random (length topten)) topten))
+                                        (setf (nth x *treelist*) a)
+                                        (setf (nth (+ x (/ *populationsize* 2)) *treelist*) b))
+                                (multiple-value-bind (a b) (mutation (nth (random (length *treelist*)) *treelist*))
+                                        (setf (nth x *treelist*) a)
+                                        (setf (nth (+ x (/ *populationsize* 2)) *treelist*) b))))))
+		(dotimes (x (/ *populationsize* 10))
+			(setf (nth (- *populationsize* 1 x) *treelist*) (nth x topten)))))
+
+(defun run ()
+	(filltreelist)
+	(dotimes (x *popiterations*)
+		(print "updating fittest")
+		(terpri)
+		(updatefittest)
+		(evolve)
+	)
+	(print (nth (getfittest) *treelist*))
+	(print (nth (getfittest) *fitlist*)))
+
+(run)
+				
+
+
